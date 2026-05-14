@@ -1,5 +1,6 @@
 import pygame
 import time
+# use my image list class
 from imagelist import ImageList
 
 class MySprite():
@@ -122,13 +123,13 @@ class MySprite():
 
 
     def animate(self, reset_animation = False):
-        # If we are animating
+        # If we are then animating
         if reset_animation == True:
         # If we are resetting the animation 
             self._current_frame = self._start_frame
         else:
             if time.time()> self._next_frame:
-                # go to next frame 
+                # go to the next frame 
                 pass
 
         self_next_frame = self._next_frame +self._delay
@@ -136,7 +137,7 @@ class MySprite():
     def get_rect(self):
         return pygame.Rect(self._x, self._y, self._h, self._w)
 
-    def  (self):
+    def draw(self):
         self._screen.blit(self._images.images[self._current_frame], self.get_rect())
 
 
@@ -165,7 +166,7 @@ if __name__ =="__main__":
     sprite_list.append(MySprite(TEST_X, TEST_Y, TEST_W, TEST_H, test_imagelist, screen))
     sprite_list[-1].set_animation( 0 , 3, 0.5)
 
-    # loop while it is not quitting
+    # loop while not quitting
     done = False
     while not done:
         # check the event queue for a quit
