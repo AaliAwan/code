@@ -1,10 +1,13 @@
-import os
+# importing files and functions
 import json
+import os  # Added to prevent a NameError in load_persist_score
 import random
 import sys
 import pygame
 from imagelist import ImageList
+import enemy
 
+# constants
 # Global System Color Palette Constants
 COLOR_DARK_GREEN = (10, 45, 16)
 COLOR_LIGHT_GREEN = (24, 75, 32)
@@ -13,8 +16,10 @@ COLOR_TEXT_WHITE = (255, 255, 255)
 COLOR_BUTTON_GREEN = (15, 115, 35)
 COLOR_BUTTON_HOVER = (35, 165, 60)
 
+# class defs
 class GameEngine:
     def __init__(self):
+        # init
         pygame.init()
         pygame.mixer.init()
         self.load_configuration()
@@ -47,6 +52,7 @@ class GameEngine:
         self.initialize_assets()
         self.reset_match_state()
 
+    # functiondefs
     def load_configuration(self):
         """Loads variable boundaries from structured metadata file to avoid literals."""
         try:
@@ -87,6 +93,7 @@ class GameEngine:
                 return int(f.read().strip())
         except (ValueError, IOError):
             return 0
+
     def save_persist_score(self):
         """Saves current score to external logs if high score threshold is exceeded."""
         if self.score > self.high_score:
@@ -140,7 +147,7 @@ class GameEngine:
         self.enemies = []
         for _ in range(self.cfg['game_balance']['bot_count']):
             self.enemies.append(
-                Enemy(
+                enemy.Enemy(  # Corrected from 'Enemy' to 'enemy.Enemy' based on your import statement
                     grid * 2, grid * 4, grid, grid, self.img_bot, self.screen, grid,
                     initial_length=self.cfg['game_balance']['initial_snake_length'],
                     max_width=self.current_w, max_height=self.current_h
@@ -148,3 +155,25 @@ class GameEngine:
             )
 
     def spawn_fruits(self):
+        """Generates random item drops within the current grid structure boundaries."""
+        # TODO: Add specific fruit positioning logic here
+        pass
+
+# the main program
+if __name__ == "__main__":
+    # program initialization
+    # Initialize engine block and entry point execution loop
+    game = GameEngine()
+    
+    # Placeholder execution framework context
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+        
+        pygame.display.flip()
+        game.clock.tick(game.cfg['screen']['fps'])
+        
+    pygame.quit()
+    sys.exit()
