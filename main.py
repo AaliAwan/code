@@ -169,7 +169,7 @@ class GameEngine:
             [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 3, self.img_pear],
             [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 5, self.img_orange]
         ]
-
+    # functiondefs
     def process_system_events(self):
         """Handles hardware system events, resizes, and player key input events."""
         grid = self.cfg['screen']['grid_size']
