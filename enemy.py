@@ -65,7 +65,7 @@ class Enemy:
         elif delta_y != 0:
             next_y += self.grid_size if delta_y > 0 else -self.grid_size
 
-        # --- EXCELLENCE FRAMEWORK: DYNAMIC DATA VALIDATION LAYER ---
+    
         # Clamps values directly against active fluid variables instead of static values
         if next_y < hud_h:
             next_y = hud_h

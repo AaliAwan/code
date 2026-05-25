@@ -1,0 +1,19 @@
+{
+  "screen": {
+    "width": 1000,
+    "height": 720,
+    "hud_height": 60,
+    "grid_size": 20,
+    "fps": 10
+  },
+  "assets": {
+    "title": "Snakey Safari by Aali Awan",
+    "icon_path": "images/snake_icon.png",
+    "font_name": "freesansbold.ttf",
+    "high_score_file": "HI_score.txt"
+  },
+  "game_balance": {
+    "initial_snake_length": 3,
+    "bot_count": 1
+  }
+}
