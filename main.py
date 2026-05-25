@@ -12,10 +12,10 @@ import enemy
 COLOR_DARK_GREEN = (10, 45, 16)
 COLOR_LIGHT_GREEN = (24, 75, 32)
 COLOR_HUD_BG = (120, 110, 45)
-COLOR_TEXT_WHITE = (255, 255, 255)
-COLOR_BUTTON_GREEN = (15, 115, 35)
-COLOR_BUTTON_HOVER = (35, 165, 60)
-
+COLOR_TEXT_WHITE = (255, 255, 255)  # White
+COLOR_BUTTON_GREEN = (15, 115, 35)  # Green
+COLOR_BUTTON_HOVER = (35, 165, 60)  # Light Green
+ 
 # class defs
 class GameEngine:
     def __init__(self):
@@ -65,6 +65,7 @@ class GameEngine:
                 "game_balance": {"initial_snake_length": 3, "bot_count": 1}
             }
 
+    # functiondefs
     def initialize_assets(self):
         """Loads and pre-processes asset objects into graphic memory surfaces."""
         self.img_player = ImageList("images/player", 20, 20)
@@ -79,7 +80,7 @@ class GameEngine:
         except Exception:
             self.snd_eat = None
             self.snd_lose = None
-
+    # functiondefs
     def load_persist_score(self):
         """Retrieves verified high score from structural external file logs."""
         filename = self.cfg['assets']['high_score_file']
@@ -156,8 +157,50 @@ class GameEngine:
 
     def spawn_fruits(self):
         """Generates random item drops within the current grid structure boundaries."""
-        # TODO: Add specific fruit positioning logic here
-        pass
+        grid = self.cfg['screen']['grid_size']
+        max_w = self.current_w - grid
+        max_h = self.current_h - grid
+        hud_h = self.cfg['screen']['hud_height']
+        
+        # Elements structured with [x, y, growth_weight_and_points, asset_ref]
+        # Apple = 2 tiles, Pear = 3 tiles, Orange = 5 tiles
+        self.fruits = [
+            [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 2, self.img_apple],
+            [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 3, self.img_pear],
+            [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 5, self.img_orange]
+        ]
+
+    def process_system_events(self):
+        """Handles hardware system events, resizes, and player key input events."""
+        grid = self.cfg['screen']['grid_size']
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.save_persist_score()
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.VIDEORESIZE and not self.is_fullscreen:
+                self.handle_resize(event.w, event.h)
+                
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_f:
+                    self.toggle_fullscreen_mode()
+                elif self.current_state == "PLAYING":
+                    if event.key == pygame.K_UP and self.player_dir[1] == 0:
+                        self.player_dir = (0, -grid)
+                    elif event.key == pygame.K_DOWN and self.player_dir[1] == 0:
+                        self.player_dir = (0, grid)
+                    elif event.key == pygame.K_LEFT and self.player_dir[0] == 0:
+                        self.player_dir = (-grid, 0)
+                    elif event.key == pygame.K_RIGHT and self.player_dir[0] == 0:
+                        self.player_dir = (grid, 0)
+                elif self.current_state == "GAMEOVER" and event.key == pygame.K_SPACE:
+                    self.reset_match_state()
+                    self.current_state = "PLAYING"
+
+    def update_frame_ticks(self):
+        """Calculates state transitions, grid shifts, and bounding-box collisions."""
+        if self.current_state != "PLAYING":
+            return
 
 # the main program
 if __name__ == "__main__":
