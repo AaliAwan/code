@@ -202,6 +202,50 @@ class GameEngine:
         if self.current_state != "PLAYING":
             return
 
+
+
+        grid = self.cfg['screen']['grid_size']
+        hud_h = self.cfg['screen']['hud_height']
+        
+        head_x = self.player_segments[0][0] + self.player_dir[0]
+        head_y = self.player_segments[0][1] + self.player_dir[1]
+        
+        # Dynamic Boundaries Collision Validation Checks
+        if (head_x < 0 or head_x >= self.current_w or 
+            head_y < hud_h or head_y >= self.current_h):
+            if self.snd_lose: self.snd_lose.play()
+            self.current_state = "GAMEOVER"
+            self.save_persist_score()
+            return
+            
+        if [head_x, head_y] in self.player_segments:
+            if self.snd_lose: self.snd_lose.play()
+            self.current_state = "GAMEOVER"
+            self.save_persist_score()
+            return
+            
+        self.player_segments.insert(0, [head_x, head_y])
+        
+        # Process Fruit Bounding Box Collision Cycles for Player
+        player_eaten = False
+        for fruit in self.fruits:
+            if head_x == fruit[0] and head_y == fruit[1]:
+                self.score += fruit[2]
+                self.player_length += fruit[2]  # Grows exactly by fruit's weight value
+                if self.snd_eat: self.snd_eat.play()
+                player_eaten = True
+                break
+                
+        if player_eaten:
+            self.spawn_fruits()
+        else:
+            if len(self.player_segments) > self.player_length:
+                self.player_segments.pop()
+                
+        # Process AI Tracking, Movement, and Consumption Algorithms
+        if self.fruits and len(self.fruits) > 0:
+            fruit_regenerate_needed = False
+
 # the main program
 if __name__ == "__main__":
     # program initialization
