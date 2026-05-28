@@ -245,22 +245,113 @@ class GameEngine:
         # Process AI Tracking, Movement, and Consumption Algorithms
         if self.fruits and len(self.fruits) > 0:
             fruit_regenerate_needed = False
+            
+            for bot in self.enemies:
+                try:
+                    bot.update_path(self.fruits[0][0], self.fruits[0][1])
+                    bot.process_movement()
+                    
+                    for fruit in self.fruits:
+                        if bot.x == fruit[0] and bot.y == fruit[1]:
+                            bot.grow(fruit[2])  # Bot grows exactly by fruit's weight value
+                            if self.snd_eat: self.snd_eat.play()
+                            fruit_regenerate_needed = True
+                            break
+                except (AttributeError, IndexError):
+                    pass
+                
+                if [head_x, head_y] in bot.segments:
+                    if self.snd_lose: self.snd_lose.play()
+                    self.current_state = "GAMEOVER"
+                    self.save_persist_score()
+                    return
+            
+            if fruit_regenerate_needed:
+                self.spawn_fruits()
 
-# the main program
-if __name__ == "__main__":
-    # program initialization
-    # Initialize engine block and entry point execution loop
-    game = GameEngine()
-    
-    # Placeholder execution framework context
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+    def render_menu_widgets(self):
+        """Renders the dynamic green main menu display structure."""
+        self.screen.fill(COLOR_DARK_GREEN)
+        title_surf = self.font_large.render("Snakey Safari", True, COLOR_TEXT_WHITE)
+        self.screen.blit(title_surf, (self.current_w // 2 - title_surf.get_width() // 2, 100))
         
+        mouse_pos = pygame.mouse.get_pos()
+        btn_w, btn_h = 240, 55
+        btn_x = self.current_w // 2 - btn_w // 2
+        btn_y = self.current_h // 2 - btn_h // 2
+        
+        btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        is_hovered = btn_rect.collidepoint(mouse_pos)
+        pygame.draw.rect(self.screen, COLOR_BUTTON_HOVER if is_hovered else COLOR_BUTTON_GREEN, btn_rect, border_radius=8)
+        
+        btn_text = self.font_medium.render("Start Game", True, COLOR_TEXT_WHITE)
+        self.screen.blit(btn_text, (btn_x + btn_w//2 - btn_text.get_width()//2, btn_y + btn_h//2 - btn_text.get_height()//2))
+
+
+        if pygame.mouse.get_pressed()[0] and is_hovered:
+            self.reset_match_state()
+            self.current_state = "PLAYING"
+
+    def draw_gameplay_grid(self):
+        """Draws the checkerboard grid map using 20px squares."""
+        grid = self.cfg['screen']['grid_size']
+        hud_h = self.cfg['screen']['hud_height']
+        
+        for y in range(hud_h, self.current_h, grid):
+            for x in range(0, self.current_w, grid):
+                tile_color = COLOR_LIGHT_GREEN if ((x // grid) + (y // grid)) % 2 == 0 else COLOR_DARK_GREEN
+                pygame.draw.rect(self.screen, tile_color, pygame.Rect(x, y, grid, grid))
+
+    def render_graphics_pipeline(self):
+        """Renders individual component layers directly onto your active screen frame."""
+        if self.current_state == "MENU":
+            self.render_menu_widgets()
+            pygame.display.flip()
+            return            
+        self.draw_gameplay_grid()
+        
+        hud_rect = pygame.Rect(0, 0, self.current_w, self.cfg['screen']['hud_height'])
+        pygame.draw.rect(self.screen, COLOR_HUD_BG, hud_rect)
+        
+        text_score = self.font_medium.render(f"Score: {self.score}", True, COLOR_TEXT_WHITE)
+        text_high = self.font_medium.render(f"High Score: {self.high_score}", True, COLOR_TEXT_WHITE)
+        self.screen.blit(text_score, (30, 15))
+        self.screen.blit(text_high, (self.current_w - text_high.get_width() - 30, 15))
+        
+        grid = self.cfg['screen']['grid_size']
+        for fruit in self.fruits:
+            rect = pygame.Rect(fruit[0], fruit[1], grid, grid)
+            self.screen.blit(fruit[3].images[0], rect)
+            val_text = self.font_small.render(str(fruit[2]), True, COLOR_TEXT_WHITE)
+            self.screen.blit(val_text, (fruit[0] + grid//2 - val_text.get_width()//2, fruit[1] + grid//2 - val_text.get_height()//2))
+            
+        for segment in self.player_segments:
+            rect = pygame.Rect(segment[0], segment[1], grid, grid)
+            self.screen.blit(self.img_player.images[0], rect)
+            
+        for bot in self.enemies:
+            bot.draw_bot()
+            
+        if self.current_state == "GAMEOVER":
+            overlay = pygame.Surface((self.current_w, self.current_h), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))
+            self.screen.blit(overlay, (0, 0))
+            
+            go_text = self.font_large.render("GAME OVER", True, (255, 50, 50))
+            sub_text = self.font_medium.render("Press SPACE to Restart", True, COLOR_TEXT_WHITE)
+            self.screen.blit(go_text, (self.current_w//2 - go_text.get_width()//2, self.current_h // 2 - 40))
+            self.screen.blit(sub_text, (self.current_w//2 - sub_text.get_width()//2, self.current_h // 2 + 40))
+            
         pygame.display.flip()
-        game.clock.tick(game.cfg['screen']['fps'])
-        
-    pygame.quit()
-    sys.exit()
+
+    def run(self):
+        """Primary executable application processing thread loop."""
+        while True:
+            self.process_system_events()
+            self.update_frame_ticks()
+            self.render_graphics_pipeline()
+            self.clock.tick(self.cfg['screen']['fps'])
+
+if __name__ == "__main__":
+    engine = GameEngine()
+    engine.run()
