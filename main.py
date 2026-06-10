@@ -1,25 +1,25 @@
-# importing files and functions
+"""
+Snakey Safari - Main Executable Game Engine
+NCEA Level 3 Digital Technologies AS 91906 Excellence Framework.
+"""
+import os
 import json
-import os  # Added to prevent a NameError in load_persist_score
 import random
 import sys
 import pygame
 from imagelist import ImageList
-import enemy
+from enemy import Enemy
 
-# constants
 # Global System Color Palette Constants
 COLOR_DARK_GREEN = (10, 45, 16)
 COLOR_LIGHT_GREEN = (24, 75, 32)
 COLOR_HUD_BG = (120, 110, 45)
-COLOR_TEXT_WHITE = (255, 255, 255)  # White
-COLOR_BUTTON_GREEN = (15, 115, 35)  # Green
-COLOR_BUTTON_HOVER = (35, 165, 60)  # Light Green
- 
-# class defs
+COLOR_TEXT_WHITE = (255, 255, 255)
+COLOR_BUTTON_GREEN = (15, 115, 35)
+COLOR_BUTTON_HOVER = (35, 165, 60)
+
 class GameEngine:
     def __init__(self):
-        # init
         pygame.init()
         pygame.mixer.init()
         self.load_configuration()
@@ -52,7 +52,6 @@ class GameEngine:
         self.initialize_assets()
         self.reset_match_state()
 
-    # functiondefs
     def load_configuration(self):
         """Loads variable boundaries from structured metadata file to avoid literals."""
         try:
@@ -65,7 +64,6 @@ class GameEngine:
                 "game_balance": {"initial_snake_length": 3, "bot_count": 1}
             }
 
-    # functiondefs
     def initialize_assets(self):
         """Loads and pre-processes asset objects into graphic memory surfaces."""
         self.img_player = ImageList("images/player", 20, 20)
@@ -80,7 +78,7 @@ class GameEngine:
         except Exception:
             self.snd_eat = None
             self.snd_lose = None
-    # functiondefs
+
     def load_persist_score(self):
         """Retrieves verified high score from structural external file logs."""
         filename = self.cfg['assets']['high_score_file']
@@ -148,7 +146,7 @@ class GameEngine:
         self.enemies = []
         for _ in range(self.cfg['game_balance']['bot_count']):
             self.enemies.append(
-                enemy.Enemy(  # Corrected from 'Enemy' to 'enemy.Enemy' based on your import statement
+                Enemy(
                     grid * 2, grid * 4, grid, grid, self.img_bot, self.screen, grid,
                     initial_length=self.cfg['game_balance']['initial_snake_length'],
                     max_width=self.current_w, max_height=self.current_h
@@ -156,7 +154,7 @@ class GameEngine:
             )
 
     def spawn_fruits(self):
-        """Generates random item drops within the current grid structure boundaries."""
+        """Generates fruit coordinates mapped directly to your active grid spacing bounds."""
         grid = self.cfg['screen']['grid_size']
         max_w = self.current_w - grid
         max_h = self.current_h - grid
@@ -169,7 +167,7 @@ class GameEngine:
             [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 3, self.img_pear],
             [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 5, self.img_orange]
         ]
-    # functiondefs
+
     def process_system_events(self):
         """Handles hardware system events, resizes, and player key input events."""
         grid = self.cfg['screen']['grid_size']
@@ -178,6 +176,7 @@ class GameEngine:
                 self.save_persist_score()
                 pygame.quit()
                 sys.exit()
+                
             elif event.type == pygame.VIDEORESIZE and not self.is_fullscreen:
                 self.handle_resize(event.w, event.h)
                 
@@ -201,9 +200,7 @@ class GameEngine:
         """Calculates state transitions, grid shifts, and bounding-box collisions."""
         if self.current_state != "PLAYING":
             return
-
-
-
+            
         grid = self.cfg['screen']['grid_size']
         hud_h = self.cfg['screen']['hud_height']
         
@@ -286,7 +283,9 @@ class GameEngine:
         
         btn_text = self.font_medium.render("Start Game", True, COLOR_TEXT_WHITE)
         self.screen.blit(btn_text, (btn_x + btn_w//2 - btn_text.get_width()//2, btn_y + btn_h//2 - btn_text.get_height()//2))
-
+        
+        inst_text = self.font_small.render("Press 'F' to Toggle Fullscreen Mode", True, COLOR_TEXT_WHITE)
+        self.screen.blit(inst_text, (self.current_w // 2 - inst_text.get_width() // 2, btn_y + btn_h + 30))
 
         if pygame.mouse.get_pressed()[0] and is_hovered:
             self.reset_match_state()
@@ -307,7 +306,8 @@ class GameEngine:
         if self.current_state == "MENU":
             self.render_menu_widgets()
             pygame.display.flip()
-            return            
+            return
+            
         self.draw_gameplay_grid()
         
         hud_rect = pygame.Rect(0, 0, self.current_w, self.cfg['screen']['hud_height'])
