@@ -1,6 +1,5 @@
 """
 Snakey Safari - Main Executable Game Engine
-NCEA Level 3 Digital Technologies AS 91906 Excellence Framework.
 """
 import os
 import json
@@ -180,6 +179,18 @@ class GameEngine:
             elif event.type == pygame.VIDEORESIZE and not self.is_fullscreen:
                 self.handle_resize(event.w, event.h)
                 
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # --- ADDED NAVIGATION COMPONENT FOR HUD MAIN MENU BUTTON ---
+                if self.current_state == "PLAYING":
+                    btn_w, btn_h = 120, 36
+                    btn_x = self.current_w // 2 - btn_w // 2
+                    btn_y = (self.cfg['screen']['hud_height'] // 2) - (btn_h // 2)
+                    nav_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+                    
+                    if nav_rect.collidepoint(event.pos):
+                        self.save_persist_score()
+                        self.current_state = "MENU"
+                
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     self.toggle_fullscreen_mode()
@@ -317,6 +328,28 @@ class GameEngine:
         text_high = self.font_medium.render(f"High Score: {self.high_score}", True, COLOR_TEXT_WHITE)
         self.screen.blit(text_score, (30, 15))
         self.screen.blit(text_high, (self.current_w - text_high.get_width() - 30, 15))
+        
+        # --- ADDED GRAPHICS RENDERING PIPELINE FOR HUD HOME BUTTON COMPONENT ---
+        btn_w, btn_h = 120, 36
+        btn_x = self.current_w // 2 - btn_w // 2
+        btn_y = (self.cfg['screen']['hud_height'] // 2) - (btn_h // 2)
+        nav_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        
+        mouse_pos = pygame.mouse.get_pos()
+        is_nav_hovered = nav_rect.collidepoint(mouse_pos) and self.current_state == "PLAYING"
+        
+        pygame.draw.rect(
+            self.screen, 
+            COLOR_BUTTON_HOVER if is_nav_hovered else COLOR_BUTTON_GREEN, 
+            nav_rect, 
+            border_radius=6
+        )
+        nav_text = self.font_small.render("Home", True, COLOR_TEXT_WHITE)
+        self.screen.blit(
+            nav_text, 
+            (btn_x + btn_w // 2 - nav_text.get_width() // 2, btn_y + btn_h // 2 - nav_text.get_height() // 2)
+        )
+        # ----------------------------------------------------------------------
         
         grid = self.cfg['screen']['grid_size']
         for fruit in self.fruits:
