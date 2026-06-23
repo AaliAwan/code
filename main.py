@@ -33,7 +33,7 @@ class GameEngine:
         )
         pygame.display.set_caption(self.cfg['assets']['title'])
         self.clock = pygame.time.Clock()
-        self.current_state = "MENU"  # MENU, PLAYING, GAMEOVER, SETTINGS, PROFILE
+        self.current_state = "MENU"  # MENU, PLAYING, GAMEOVER, SETTINGS, PROFILE, SOUND, CONFIRM_QUIT
         self.high_score = self.load_persist_score()
 
         # Game session parameters
@@ -47,9 +47,9 @@ class GameEngine:
         self.current_round_duration = 0.0
 
         # Settings modifiers
-        self.mouse_sensitivity = 1.0
+        self.mouse_sensitivity = 1  # discrete level: 0 = Low, 1 = Normal, 2 = High
         self.bot_enabled = True
-        self.speed_multiplier = 1.0  # 1.0x or 2.0x speed modes
+        self.speed_multiplier = 1.0  # 1.0x, 1.5x, or 2.0x speed modes
 
         # Profile Data Storage tracking variables
         self.stats_deaths = 0
@@ -227,6 +227,9 @@ class GameEngine:
             [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 3, self.img_pear],
             [random.randrange(0, max_w // grid) * grid, random.randrange(hud_h // grid + 1, max_h // grid) * grid, 5, self.img_orange]
         ]
+        # Whenever fruits respawn, force every bot to roll a brand-new random target
+        for bot in getattr(self, 'enemies', []):
+            bot.target_fruit_idx = None
 
     def process_system_events(self):
         """Handles hardware system events, resizes, and player key/mouse click inputs."""
@@ -250,11 +253,7 @@ class GameEngine:
                     btn_x = 20
                     btn_y = (self.cfg['screen']['hud_height'] // 2) - (btn_h // 2)
                     if pygame.Rect(btn_x, btn_y, btn_w, btn_h).collidepoint(mouse_pos):
-                        self.save_persist_score()
-                        self.stats_deaths += 1
-                        self.save_profile_statistics()
-                        self.current_state = "MENU"
-                        self.load_and_play_home_music()
+                        self.current_state = "CONFIRM_QUIT"
 
                 # Menu Buttons handling click detection
                 elif self.current_state == "MENU":
@@ -280,17 +279,22 @@ class GameEngine:
 
                 # Settings Menu adjustment clicks handling
                 elif self.current_state == "SETTINGS":
-                    # Sensitivity adjustments
+                    # Sensitivity adjustments (discrete levels: 0 Low, 1 Normal, 2 High)
                     if pygame.Rect(self.current_w // 2 + 60, 200, 40, 30).collidepoint(mouse_pos):
-                        self.mouse_sensitivity = round(min(5.0, self.mouse_sensitivity + 0.2), 1)
+                        self.mouse_sensitivity = min(2, self.mouse_sensitivity + 1)
                     elif pygame.Rect(self.current_w // 2 + 10, 200, 40, 30).collidepoint(mouse_pos):
-                        self.mouse_sensitivity = round(max(0.2, self.mouse_sensitivity - 0.2), 1)
+                        self.mouse_sensitivity = max(0, self.mouse_sensitivity - 1)
                     # Bot state handling
                     elif pygame.Rect(self.current_w // 2 + 10, 270, 100, 35).collidepoint(mouse_pos):
                         self.bot_enabled = not self.bot_enabled
-                    # Game speed updates
+                    # Game speed updates - cycles 1.0x -> 1.5x -> 2.0x -> back to 1.0x
                     elif pygame.Rect(self.current_w // 2 + 10, 340, 100, 35).collidepoint(mouse_pos):
-                        self.speed_multiplier = 2.0 if self.speed_multiplier == 1.0 else 1.0
+                        if self.speed_multiplier == 1.0:
+                            self.speed_multiplier = 1.5
+                        elif self.speed_multiplier == 1.5:
+                            self.speed_multiplier = 2.0
+                        else:
+                            self.speed_multiplier = 1.0
                     # Return button
                     elif pygame.Rect(self.current_w // 2 - 100, self.current_h - 100, 200, 50).collidepoint(mouse_pos):
                         self.current_state = "MENU"
@@ -313,9 +317,28 @@ class GameEngine:
                     elif pygame.Rect(cx - 100, self.current_h - 100, 200, 50).collidepoint(mouse_pos):
                         self.current_state = "MENU"
 
+                # "Are you sure you want to quit?" dialog click processing
+                elif self.current_state == "CONFIRM_QUIT":
+                    cx = self.current_w // 2
+                    cy = self.current_h // 2
+                    yes_rect = pygame.Rect(cx - 130, cy + 40, 110, 50)
+                    no_rect = pygame.Rect(cx + 20, cy + 40, 110, 50)
+                    if yes_rect.collidepoint(mouse_pos):
+                        self.save_persist_score()
+                        self.stats_deaths += 1
+                        self.save_profile_statistics()
+                        self.current_state = "MENU"
+                        self.load_and_play_home_music()
+                    elif no_rect.collidepoint(mouse_pos):
+                        self.current_state = "PLAYING"
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     self.toggle_fullscreen_mode()
+                elif event.key == pygame.K_ESCAPE and self.current_state == "PLAYING":
+                    self.current_state = "CONFIRM_QUIT"
+                elif event.key == pygame.K_ESCAPE and self.current_state == "CONFIRM_QUIT":
+                    self.current_state = "PLAYING"
                 elif self.current_state == "PLAYING":
                     if event.key == pygame.K_UP and self.player_dir[1] == 0:
                         self.player_dir = (0, -grid)
@@ -384,7 +407,14 @@ class GameEngine:
             fruit_regenerate_needed = False
             for bot in self.enemies:
                 try:
-                    bot.update_path(self.fruits[0][0], self.fruits[0][1])
+                    # Pick a brand-new random fruit target if this bot doesn't have a valid one yet
+                    target_idx = getattr(bot, 'target_fruit_idx', None)
+                    if target_idx is None or target_idx >= len(self.fruits):
+                        target_idx = random.randrange(len(self.fruits))
+                        bot.target_fruit_idx = target_idx
+                    target_fruit = self.fruits[target_idx]
+
+                    bot.update_path(target_fruit[0], target_fruit[1])
                     bot.process_movement()
                     for fruit in self.fruits:
                         if bot.x == fruit[0] and bot.y == fruit[1]:
@@ -440,7 +470,8 @@ class GameEngine:
         cx = self.current_w // 2
 
         # Sensitivity
-        lbl_sens = self.font_medium.render(f"Mouse Sensitivity:  {self.mouse_sensitivity}", True, COLOR_TEXT_WHITE)
+        sens_labels = {0: "Low", 1: "Normal", 2: "High"}
+        lbl_sens = self.font_medium.render(f"Mouse Sensitivity:  {self.mouse_sensitivity} ({sens_labels[self.mouse_sensitivity]})", True, COLOR_TEXT_WHITE)
         self.screen.blit(lbl_sens, (cx - 240, 200))
         rect_minus = pygame.Rect(cx + 10, 200, 40, 30)
         rect_plus = pygame.Rect(cx + 60, 200, 40, 30)
@@ -462,7 +493,7 @@ class GameEngine:
         self.screen.blit(lbl_speed, (cx - 240, 340))
         rect_speed = pygame.Rect(cx + 10, 340, 100, 35)
         pygame.draw.rect(self.screen, COLOR_BUTTON_GREEN if not rect_speed.collidepoint(mouse_pos) else COLOR_BUTTON_HOVER, rect_speed, border_radius=4)
-        status_spd = self.font_small.render("2.0x Speed" if self.speed_multiplier == 2.0 else "1.0x Normal", True, COLOR_TEXT_WHITE)
+        status_spd = self.font_small.render(f"{self.speed_multiplier}x Speed", True, COLOR_TEXT_WHITE)
         self.screen.blit(status_spd, (cx + 60 - status_spd.get_width()//2, 348))
 
         # Return button
@@ -605,6 +636,28 @@ class GameEngine:
             sub_text = self.font_medium.render("Press SPACE to Restart", True, COLOR_TEXT_WHITE)
             self.screen.blit(go_text, (self.current_w//2 - go_text.get_width()//2, self.current_h // 2 - 40))
             self.screen.blit(sub_text, (self.current_w//2 - sub_text.get_width()//2, self.current_h // 2 + 40))
+
+        # Quit confirmation overlay
+        if self.current_state == "CONFIRM_QUIT":
+            overlay = pygame.Surface((self.current_w, self.current_h), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 190))
+            self.screen.blit(overlay, (0, 0))
+
+            cx = self.current_w // 2
+            cy = self.current_h // 2
+            q_text = self.font_large.render("Quit to Menu?", True, COLOR_TEXT_WHITE)
+            sub_text = self.font_medium.render("Are you sure you want to quit?", True, COLOR_TEXT_WHITE)
+            self.screen.blit(q_text, (cx - q_text.get_width()//2, cy - 90))
+            self.screen.blit(sub_text, (cx - sub_text.get_width()//2, cy - 30))
+
+            yes_rect = pygame.Rect(cx - 130, cy + 40, 110, 50)
+            no_rect = pygame.Rect(cx + 20, cy + 40, 110, 50)
+            pygame.draw.rect(self.screen, COLOR_BUTTON_HOVER if yes_rect.collidepoint(mouse_pos) else COLOR_BUTTON_GREEN, yes_rect, border_radius=6)
+            pygame.draw.rect(self.screen, COLOR_BUTTON_HOVER if no_rect.collidepoint(mouse_pos) else COLOR_BUTTON_GREEN, no_rect, border_radius=6)
+            yes_txt = self.font_medium.render("Yes", True, COLOR_TEXT_WHITE)
+            no_txt = self.font_medium.render("No", True, COLOR_TEXT_WHITE)
+            self.screen.blit(yes_txt, (yes_rect.centerx - yes_txt.get_width()//2, yes_rect.centery - yes_txt.get_height()//2))
+            self.screen.blit(no_txt, (no_rect.centerx - no_txt.get_width()//2, no_rect.centery - no_txt.get_height()//2))
 
         pygame.display.flip()
 
