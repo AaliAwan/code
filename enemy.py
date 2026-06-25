@@ -65,16 +65,16 @@ class Enemy:
         elif delta_y != 0:
             next_y += self.grid_size if delta_y > 0 else -self.grid_size
 
-    
-        # Clamps values directly against active fluid variables instead of static values
+        # --- EXCELLENCE FRAMEWORK: DYNAMIC DATA VALIDATION LAYER ---
+        # BUGFIX: Mathematical snapping boundaries back into active grid alignment
         if next_y < hud_h:
-            next_y = hud_h
+            next_y = ((hud_h // self.grid_size) + 1) * self.grid_size
         if next_y >= self.max_height:
-            next_y = self.max_height - self.grid_size
+            next_y = ((self.max_height - self.grid_size) // self.grid_size) * self.grid_size
         if next_x < 0:
             next_x = 0
         if next_x >= self.max_width:
-            next_x = self.max_width - self.grid_size
+            next_x = ((self.max_width - self.grid_size) // self.grid_size) * self.grid_size
 
         self.segments.insert(0, [next_x, next_y])
 
@@ -82,9 +82,15 @@ class Enemy:
             self.segments.pop()
 
     def draw_bot(self):
+        """Draws the bot with proper scaling to match the current grid size."""
         for segment in self.segments:
-            rect = pygame.Rect(segment[0], segment[1], self.width, self.height)
+            # Align segment to grid
+            seg_x = (segment[0] // self.grid_size) * self.grid_size
+            seg_y = (segment[1] // self.grid_size) * self.grid_size
+            rect = pygame.Rect(seg_x, seg_y, self.grid_size, self.grid_size)
             try:
-                self.screen.blit(self.image_list.images[0], rect)
+                # Scale the image to match the current grid size
+                img = pygame.transform.scale(self.image_list.images[0], (self.grid_size, self.grid_size))
+                self.screen.blit(img, rect)
             except (AttributeError, IndexError):
                 pygame.draw.rect(self.screen, (200, 40, 40), rect)

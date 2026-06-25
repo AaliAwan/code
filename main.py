@@ -40,7 +40,7 @@ class GameEngine:
         self.base_grid_size = self.cfg['screen']['grid_size']
         self.current_grid_size = self.base_grid_size
         self.screen = pygame.display.set_mode(
-            (self.current_w, self.current_h), 
+            (self.current_w, self.current_h),
             pygame.RESIZABLE
         )
         pygame.display.set_caption(self.cfg['assets']['title'])
@@ -199,14 +199,14 @@ class GameEngine:
             width = 400
         if height < 100:
             height = 400
-        
+       
         target_cells = 35
         new_grid = max(10, min(width // target_cells, 40))
-        
+       
         self.current_grid_size = new_grid
         self.current_w = width
         self.current_h = height
-        
+       
         if self.current_w < 400:
             self.current_w = 400
         if self.current_h < 400:
@@ -218,7 +218,7 @@ class GameEngine:
 
         self.screen = pygame.display.set_mode((self.current_w, self.current_h), flags)
         self.align_all_objects_to_grid()
-        
+       
         try:
             raw_logo = pygame.image.load("images/logo.png").convert_alpha()
             logo_scale = min(self.current_w * 0.2, 250)
@@ -230,7 +230,7 @@ class GameEngine:
 
     def align_all_objects_to_grid(self):
         grid = self.current_grid_size
-        
+       
         if hasattr(self, 'player_segments') and self.player_segments:
             new_segments = []
             for seg in self.player_segments:
@@ -239,7 +239,7 @@ class GameEngine:
                     (seg[1] // grid) * grid
                 ])
             self.player_segments = new_segments
-        
+       
         if hasattr(self, 'fruits'):
             new_fruits = []
             for fruit in self.fruits:
@@ -250,7 +250,7 @@ class GameEngine:
                     fruit[3]
                 ])
             self.fruits = new_fruits
-        
+       
         if hasattr(self, 'enemies'):
             for bot in self.enemies:
                 bot.update_screen_boundaries(self.current_w, self.current_h)
@@ -305,16 +305,16 @@ class GameEngine:
         max_w = self.current_w - grid
         max_h = self.current_h - grid
         hud_h = self.cfg['screen']['hud_height']
-        
+       
         self.fruits = [
-            [random.randrange(0, max_w // grid) * grid, 
-             random.randrange(hud_h // grid + 1, max_h // grid) * grid, 
+            [random.randrange(0, max_w // grid) * grid,
+             random.randrange(hud_h // grid + 1, max_h // grid) * grid,
              2, self.img_apple],
-            [random.randrange(0, max_w // grid) * grid, 
-             random.randrange(hud_h // grid + 1, max_h // grid) * grid, 
+            [random.randrange(0, max_w // grid) * grid,
+             random.randrange(hud_h // grid + 1, max_h // grid) * grid,
              3, self.img_pear],
-            [random.randrange(0, max_w // grid) * grid, 
-             random.randrange(hud_h // grid + 1, max_h // grid) * grid, 
+            [random.randrange(0, max_w // grid) * grid,
+             random.randrange(hud_h // grid + 1, max_h // grid) * grid,
              5, self.img_orange]
         ]
 
@@ -349,12 +349,12 @@ class GameEngine:
                     btn_w = int(220 * (self.current_w / 1000))
                     btn_h = int(45 * (self.current_h / 720))
                     cx = self.current_w // 2 - btn_w // 2
-                    
+                   
                     logo_height = getattr(self, 'logo_height', 200)
                     title_offset = 80 + (logo_height * 0.6)
                     start_y = int(title_offset + 180 * (self.current_h / 720))
                     spacing = int(55 * (self.current_h / 720))
-                    
+                   
                     if pygame.Rect(cx, start_y, btn_w, btn_h).collidepoint(mouse_pos):
                         self.reset_match_state()
                         self.current_state = "PLAYING"
@@ -372,7 +372,7 @@ class GameEngine:
                     btn_w = int(100 * (self.current_w / 1000))
                     btn_h = int(35 * (self.current_h / 720))
                     cx = self.current_w // 2
-                    
+                   
                     if pygame.Rect(cx + 10, 200, btn_w, btn_h).collidepoint(mouse_pos):
                         self.bot_enabled = not self.bot_enabled
                     elif pygame.Rect(cx + 10, 270, btn_w, btn_h).collidepoint(mouse_pos):
@@ -395,7 +395,7 @@ class GameEngine:
                         self.toggle_sfx()
                     elif pygame.Rect(cx - 100, self.current_h - 100, 200, 50).collidepoint(mouse_pos):
                         self.current_state = "MENU"
-                
+               
                 elif self.current_state == "HOWTOPLAY":
                     # Fixed: button position matches rendering
                     cx = self.current_w // 2
@@ -434,11 +434,11 @@ class GameEngine:
 
         grid = self.current_grid_size
         hud_h = self.cfg['screen']['hud_height']
-        
+       
         head_x = self.player_segments[0][0] + self.player_dir[0]
         head_y = self.player_segments[0][1] + self.player_dir[1]
 
-        if (head_x < 0 or head_x >= self.current_w or 
+        if (head_x < 0 or head_x >= self.current_w or
             head_y < hud_h or head_y >= self.current_h):
             self.play_lose_sfx()
             self.current_state = "GAMEOVER"
@@ -507,8 +507,8 @@ class GameEngine:
             r = int(color1[0] + (color2[0] - color1[0]) * progress)
             g = int(color1[1] + (color2[1] - color1[1]) * progress)
             b = int(color1[2] + (color2[2] - color1[2]) * progress)
-            pygame.draw.line(self.screen, (r, g, b), 
-                           (rect.x, rect.y + i), 
+            pygame.draw.line(self.screen, (r, g, b),
+                           (rect.x, rect.y + i),
                            (rect.x + rect.width, rect.y + i))
 
     def draw_leaf_decoration(self, x, y, size, color):
@@ -527,7 +527,7 @@ class GameEngine:
             g = int(25 + 30 * progress)
             b = int(10 + 20 * progress)
             pygame.draw.line(self.screen, (r, g, b), (0, y), (self.current_w, y))
-        
+       
         for i in range(6):
             x = (i * 197 + 30) % self.current_w
             y = (i * 89 + 20) % self.current_h
@@ -542,12 +542,12 @@ class GameEngine:
             title_y = logo_y + self.img_logo.get_height() + 15
         else:
             title_y = 80
-        
+       
         title_surf = self.font_title.render("Snakey Safari", True, COLOR_TEXT_LIME)
         shadow = self.font_title.render("Snakey Safari", True, (10, 60, 10))
         self.screen.blit(shadow, (self.current_w // 2 - title_surf.get_width() // 2 + 3, title_y + 3))
         self.screen.blit(title_surf, (self.current_w // 2 - title_surf.get_width() // 2, title_y))
-        
+       
         sub_surf = self.font_small.render("Jungle Adventure", True, COLOR_TEXT_CREAM)
         self.screen.blit(sub_surf, (self.current_w // 2 - sub_surf.get_width() // 2, title_y + 55))
 
@@ -556,7 +556,7 @@ class GameEngine:
         btn_w = int(220 * (self.current_w / 1000))
         btn_h = int(45 * (self.current_h / 720))
         cx = self.current_w // 2 - btn_w // 2
-        
+       
         logo_height = getattr(self, 'logo_height', 200)
         title_offset = 80 + (logo_height * 0.6)
         start_y = int(title_offset + 180 * (self.current_h / 720))
@@ -573,35 +573,35 @@ class GameEngine:
         for text, y_pos in buttons:
             rect = pygame.Rect(cx, y_pos, btn_w, btn_h)
             hover = rect.collidepoint(mouse_pos)
-            
+           
             if hover:
                 for i in range(3):
                     glow_rect = rect.inflate(i * 4, i * 4)
-                    pygame.draw.rect(self.screen, (COLOR_BUTTON_HOVER[0], COLOR_BUTTON_HOVER[1], COLOR_BUTTON_HOVER[2], 50 - i*15), 
+                    pygame.draw.rect(self.screen, (COLOR_BUTTON_HOVER[0], COLOR_BUTTON_HOVER[1], COLOR_BUTTON_HOVER[2], 50 - i*15),
                                    glow_rect, border_radius=8)
-            
+           
             color = COLOR_BUTTON_HOVER if hover else COLOR_BUTTON_GREEN
             pygame.draw.rect(self.screen, color, rect, border_radius=8)
             pygame.draw.rect(self.screen, (255, 255, 255, 20), rect, 2, border_radius=8)
-            
+           
             font_size = max(18, int(26 * (self.current_w / 1000)))
             font = pygame.font.Font(None, font_size)
             txt_surf = font.render(text, True, COLOR_TEXT_WHITE)
-            self.screen.blit(txt_surf, (cx + btn_w//2 - txt_surf.get_width()//2, 
+            self.screen.blit(txt_surf, (cx + btn_w//2 - txt_surf.get_width()//2,
                                       y_pos + btn_h//2 - txt_surf.get_height()//2))
 
     def render_settings_view(self):
         self.screen.fill((10, 30, 15))
-        
+       
         border_rect = pygame.Rect(20, 20, self.current_w - 40, self.current_h - 40)
         pygame.draw.rect(self.screen, (40, 80, 40), border_rect, 3, border_radius=12)
-        
+       
         title_surf = self.font_large.render("Settings", True, COLOR_TEXT_LIME)
         self.screen.blit(title_surf, (self.current_w // 2 - title_surf.get_width() // 2, 60))
-        
+       
         mouse_pos = pygame.mouse.get_pos()
         cx = self.current_w // 2
-        
+       
         btn_w = int(100 * (self.current_w / 1000))
         btn_h = int(35 * (self.current_h / 720))
         spacing = int(70 * (self.current_h / 720))
@@ -632,14 +632,14 @@ class GameEngine:
 
     def render_profile_view(self):
         self.screen.fill((10, 30, 15))
-        
+       
         border_rect = pygame.Rect(20, 20, self.current_w - 40, self.current_h - 40)
         pygame.draw.rect(self.screen, (40, 80, 40), border_rect, 3, border_radius=12)
-        
+       
         cx = self.current_w // 2
         title_surf = self.font_large.render("Profile", True, COLOR_TEXT_LIME)
         self.screen.blit(title_surf, (cx - title_surf.get_width() // 2, 60))
-        
+       
         card_w = int(500 * (self.current_w / 1000))
         card_h = int(280 * (self.current_h / 720))
         card_rect = pygame.Rect(cx - card_w//2, 150, card_w, card_h)
@@ -669,10 +669,10 @@ class GameEngine:
 
     def render_sound_view(self):
         self.screen.fill((10, 30, 15))
-        
+       
         border_rect = pygame.Rect(20, 20, self.current_w - 40, self.current_h - 40)
         pygame.draw.rect(self.screen, (40, 80, 40), border_rect, 3, border_radius=12)
-        
+       
         mouse_pos = pygame.mouse.get_pos()
         cx = self.current_w // 2
 
@@ -708,28 +708,28 @@ class GameEngine:
 
     def render_how_to_play(self):
         self.screen.fill((10, 30, 15))
-        
+       
         border_rect = pygame.Rect(20, 20, self.current_w - 40, self.current_h - 40)
         pygame.draw.rect(self.screen, (40, 80, 40), border_rect, 3, border_radius=12)
-        
+       
         title_surf = self.font_large.render("How to Play", True, COLOR_TEXT_LIME)
         self.screen.blit(title_surf, (self.current_w // 2 - title_surf.get_width() // 2, 40))
-        
+       
         # Adjusted card height for shorter content
         card_w = int(800 * (self.current_w / 1000))
         card_h = int(420 * (self.current_h / 720))  # reduced height
         card_x = self.current_w // 2 - card_w // 2
         card_y = 100
-        
+       
         card_surf = pygame.Surface((card_w, card_h), pygame.SRCALPHA)
         card_surf.fill((15, 30, 15, 230))
         self.screen.blit(card_surf, (card_x, card_y))
         pygame.draw.rect(self.screen, (40, 80, 40), (card_x, card_y, card_w, card_h), 2, border_radius=8)
-        
+       
         content_y = card_y + 20
         line_spacing = max(20, int(28 * (self.current_h / 720)))
         font = pygame.font.Font(None, max(18, int(24 * (self.current_h / 720))))
-        
+       
         # Instructions truncated at GAME OVER
         instructions = [
             "OBJECTIVE",
@@ -750,7 +750,7 @@ class GameEngine:
             "* Colliding with your own snake body",
             "* Getting caught by AI competitor snakes"
         ]
-        
+       
         for line in instructions:
             if line == "FRUIT VALUES":
                 text_surf = font.render(line, True, COLOR_TEXT_GOLD)
@@ -760,14 +760,14 @@ class GameEngine:
             elif line == "":
                 content_y += line_spacing // 2
                 continue
-            
+           
             text_surf = font.render(line, True, COLOR_TEXT_CREAM if not line.startswith("*") else (200, 200, 180))
             self.screen.blit(text_surf, (card_x + 30, content_y))
             content_y += line_spacing
-            
+           
             if content_y > card_y + card_h - 40:
                 break
-        
+       
         # Return button
         cx = self.current_w // 2
         rect_back = pygame.Rect(cx - 100, self.current_h - 100, 200, 50)
@@ -817,35 +817,54 @@ class GameEngine:
         hud_height = self.cfg['screen']['hud_height']
         hud_rect = pygame.Rect(0, 0, self.current_w, hud_height)
         self.draw_gradient_rect(hud_rect, COLOR_HUD_GRADIENT_TOP, COLOR_HUD_GRADIENT_BOTTOM)
-        
+       
         # HUD decorative line (simple)
         pygame.draw.line(self.screen, (100, 80, 50), (0, hud_height), (self.current_w, hud_height), 2)
 
         # Scale HUD text
         font_med = pygame.font.Font(None, max(20, int(36 * (self.current_h / 720))))
         font_small = pygame.font.Font(None, max(16, int(24 * (self.current_h / 720))))
-        
-        # Score and High Score in GOLD
-        text_score = font_med.render(f"Score: {self.score}", True, COLOR_TEXT_GOLD)
-        text_high = font_med.render(f"High: {self.high_score}", True, COLOR_TEXT_GOLD)
-        text_timer = font_med.render(f"Time: {self.current_round_duration}s", True, COLOR_TEXT_CREAM)
-
+       
+        # --- DYNAMIC HUD ALIGNMENT ---
+        # Calculate button dimensions
         btn_w = int(100 * (self.current_w / 1000))
         btn_h = int(36 * (self.current_h / 720))
         btn_x = 20
-        btn_end = btn_x + btn_w + 20
-        
-        timer_x = max(btn_end + 20, self.current_w // 2 - text_timer.get_width() // 2)
+        btn_y = (hud_height // 2) - (btn_h // 2)
+        btn_end = btn_x + btn_w + 20  # Button end + padding
+       
+        # Create text surfaces
+        text_score = font_med.render(f"Score: {self.score}", True, COLOR_TEXT_GOLD)
+        text_high = font_med.render(f"High: {self.high_score}", True, COLOR_TEXT_GOLD)
+        text_timer = font_med.render(f"Time: {self.current_round_duration}s", True, COLOR_TEXT_CREAM)
+       
+        # Position score to the right of the Home button
+        score_x = btn_end + 20  # Start after button with padding
+       
+        # Position high score on the right
         high_score_x = self.current_w - text_high.get_width() - 30
+       
+        # Position timer in the centre, but avoid overlapping with score and high score
+        timer_x = self.current_w // 2 - text_timer.get_width() // 2
+       
+        # Check if timer overlaps with score
+        if timer_x < score_x + text_score.get_width() + 20:
+            timer_x = score_x + text_score.get_width() + 20
+       
+        # Check if timer overlaps with high score
         if timer_x + text_timer.get_width() > high_score_x - 20:
             timer_x = high_score_x - text_timer.get_width() - 20
-        
-        self.screen.blit(text_score, (140, 15))
+       
+        # Ensure timer doesn't go off screen
+        if timer_x < 0:
+            timer_x = 10
+       
+        # Blit all HUD elements
+        self.screen.blit(text_score, (score_x, 15))
         self.screen.blit(text_timer, (timer_x, 15))
         self.screen.blit(text_high, (high_score_x, 15))
 
         # Home button
-        btn_y = (hud_height // 2) - (btn_h // 2)
         nav_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
         mouse_pos = pygame.mouse.get_pos()
         is_nav_hovered = nav_rect.collidepoint(mouse_pos) and self.current_state == "PLAYING"
@@ -861,17 +880,17 @@ class GameEngine:
             fruit_x = (fruit[0] // grid) * grid
             fruit_y = (fruit[1] // grid) * grid
             rect = pygame.Rect(fruit_x, fruit_y, grid, grid)
-            
+           
             glow_size = grid + 4
             glow_rect = pygame.Rect(fruit_x - 2, fruit_y - 2, glow_size, glow_size)
             glow_color = (255, 200, 50, 30)
             pygame.draw.rect(self.screen, glow_color, glow_rect, border_radius=4)
-            
+           
             fruit_img = pygame.transform.scale(fruit[3].images[0], (grid, grid))
             self.screen.blit(fruit_img, rect)
             val_text = font_small.render(str(fruit[2]), True, COLOR_TEXT_GOLD)
             self.screen.blit(val_text, (fruit_x + grid//2 - val_text.get_width()//2, fruit_y + grid//2 - val_text.get_height()//2))
-        
+       
         # Snake segments
         for segment in self.player_segments:
             seg_x = (segment[0] // grid) * grid
@@ -893,23 +912,23 @@ class GameEngine:
             overlay = pygame.Surface((self.current_w, self.current_h), pygame.SRCALPHA)
             overlay.fill((5, 15, 5, 200))
             self.screen.blit(overlay, (0, 0))
-            
+           
             go_border = pygame.Rect(self.current_w//2 - 280, self.current_h//2 - 120, 560, 240)
             pygame.draw.rect(self.screen, (20, 40, 20), go_border, border_radius=12)
             pygame.draw.rect(self.screen, (80, 60, 40), go_border, 3, border_radius=12)
-            
+           
             go_text = self.font_large.render("GAME OVER", True, (255, 80, 80))
             self.screen.blit(go_text, (self.current_w//2 - go_text.get_width()//2, self.current_h // 2 - 90))
-            
+           
             you_died_text = self.font_medium.render("You Died", True, COLOR_TEXT_CREAM)
             self.screen.blit(you_died_text, (self.current_w//2 - you_died_text.get_width()//2, self.current_h // 2 - 30))
-            
+           
             score_text = self.font_medium.render(f"Score: {self.score}", True, COLOR_TEXT_LIME)
             self.screen.blit(score_text, (self.current_w//2 - score_text.get_width()//2, self.current_h // 2 + 20))
-            
+           
             restart_text = self.font_small.render("Press SPACE to Restart", True, COLOR_TEXT_CREAM)
             self.screen.blit(restart_text, (self.current_w//2 - restart_text.get_width()//2, self.current_h // 2 + 70))
-            
+           
             menu_text = self.font_small.render("Press ESC to go to Main Menu", True, COLOR_TEXT_CREAM)
             self.screen.blit(menu_text, (self.current_w//2 - menu_text.get_width()//2, self.current_h // 2 + 100))
 
