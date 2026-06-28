@@ -1,7 +1,7 @@
 {
   "screen": {
-    "width": 1000,
-    "height": 720,
+    "width": 1920,
+    "height": 1080,
     "hud_height": 60,
     "grid_size": 20,
     "fps": 10
