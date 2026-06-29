@@ -295,6 +295,8 @@ class GameEngine:
         self.spawn_fruits()
 
         self.enemies = []
+        self.bot_targets = []   # list of (target_x, target_y) for each enemy
+
         if getattr(self, 'bot_enabled', True):
             for _ in range(self.cfg['game_balance']['bot_count']):
                 enemy = Enemy(
@@ -304,6 +306,14 @@ class GameEngine:
                 )
                 enemy.segments = [[(s[0] // grid) * grid, (s[1] // grid) * grid] for s in enemy.segments]
                 self.enemies.append(enemy)
+
+        # Assign a random fruit target for each bot
+        for _ in self.enemies:
+            if self.fruits:
+                target = random.choice(self.fruits)
+                self.bot_targets.append((target[0], target[1]))
+            else:
+                self.bot_targets.append((0, 0))  # fallback
 
     def spawn_fruits(self):
         grid = self.current_grid_size
@@ -477,8 +487,8 @@ class GameEngine:
                         self.confirm_quit_app = True
 
                 elif self.current_state == "SETTINGS":
-                    btn_w = int(100 * (self.current_w / 1000))
-                    btn_h = int(35 * (self.current_h / 720))
+                    btn_w = int(100 * (self.current_w / 1920))
+                    btn_h = int(35 * (self.current_h / 1080))
                     cx = self.current_w // 2
                     spacing = int(70 * (self.current_h / 720))
 
@@ -597,12 +607,35 @@ class GameEngine:
             if len(self.player_segments) > self.player_length:
                 self.player_segments.pop()
 
+        # --- BOT LOGIC with random fruit targeting ---
         if self.bot_enabled and hasattr(self, 'enemies') and self.fruits:
             fruit_regenerate_needed = False
-            for bot in self.enemies:
+
+            # Ensure bot_targets list matches enemy count
+            while len(self.bot_targets) < len(self.enemies):
+                if self.fruits:
+                    target = random.choice(self.fruits)
+                    self.bot_targets.append((target[0], target[1]))
+                else:
+                    self.bot_targets.append((0, 0))
+
+            for i, bot in enumerate(self.enemies):
                 try:
-                    bot.update_path(self.fruits[0][0], self.fruits[0][1])
+                    # Check if current target still exists in fruits
+                    target_x, target_y = self.bot_targets[i]
+                    target_exists = any(f[0] == target_x and f[1] == target_y for f in self.fruits)
+
+                    if not target_exists and self.fruits:
+                        # Target fruit is gone – pick a new random fruit
+                        new_target = random.choice(self.fruits)
+                        self.bot_targets[i] = (new_target[0], new_target[1])
+                        target_x, target_y = self.bot_targets[i]
+
+                    # Move bot towards its target
+                    bot.update_path(target_x, target_y)
                     bot.process_movement()
+
+                    # Check if bot ate a fruit
                     for fruit in self.fruits:
                         if bot.x == fruit[0] and bot.y == fruit[1]:
                             bot.grow(fruit[2])
@@ -612,6 +645,7 @@ class GameEngine:
                 except (AttributeError, IndexError):
                     pass
 
+                # Check collision with bot
                 if [head_x, head_y] in bot.segments:
                     self.play_lose_sfx()
                     self.current_state = "GAMEOVER"
@@ -623,6 +657,7 @@ class GameEngine:
 
             if fruit_regenerate_needed:
                 self.spawn_fruits()
+                # After regeneration, bot targets that pointed to removed fruits will be updated on next frame
 
     # ------------------- RENDERING -------------------
     def draw_gradient_rect(self, rect, color1, color2):
