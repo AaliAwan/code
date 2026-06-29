@@ -1,4 +1,4 @@
-"""Snakey Safari - Main Executable Game Engine"""
+"""Snakey Safari - Main Executable Game Engine."""
 import os
 import json
 import random
@@ -23,12 +23,15 @@ COLOR_BUTTON_HOVER = (45, 90, 50)  # Slightly lighter on hover
 COLOR_CARD_DARK = (20, 30, 20)  # Dark jungle shadow
 COLOR_GRID_ALT = (35, 80, 35)  # Alternate grid color
 COLOR_LEAF = (60, 140, 40)  # Leaf green (kept for menu background)
-COLOR_COMMON = (100, 200, 100)  # Light green for common fruits (kept for potential use)
 COLOR_UNCOMMON = (255, 200, 50)  # Gold for uncommon fruits
 COLOR_RARE = (255, 80, 80)  # Red for rare fruits
 
+
 class GameEngine:
+    """Main Game Engine Class."""
+
     def __init__(self):
+        """Game Engine Constructor."""
         pygame.init()
         pygame.mixer.init()
         self.load_configuration()
@@ -94,7 +97,7 @@ class GameEngine:
         self.confirm_message = ""        # Message to display in the dialog
 
     def load_configuration(self):
-        """Loads variable boundaries from structured metadata file to avoid literals."""
+        """Load variable boundaries from structured metadata file to avoid literals."""
         try:
             with open("config.json", "r") as f:
                 self.cfg = json.load(f)
@@ -106,7 +109,7 @@ class GameEngine:
             }
 
     def initialize_assets(self):
-        """Loads and pre-processes asset objects into graphic memory surfaces."""
+        """Load and pre-processes asset objects into graphic memory surfaces."""
         self.img_player = ImageList("images/player", 20, 20)
         self.img_bot = ImageList("images/bot", 20, 20)
         self.img_apple = ImageList("images/apple", 20, 20)
@@ -154,6 +157,7 @@ class GameEngine:
             self.snd_lose = None
 
     def load_persist_score(self):
+        """Load high score from file."""
         filename = self.cfg['assets']['high_score_file']
         if not os.path.exists(filename):
             try:
@@ -168,6 +172,7 @@ class GameEngine:
             return 0
 
     def save_persist_score(self):
+
         if self.score > self.high_score:
             self.high_score = self.score
             try:
@@ -177,6 +182,7 @@ class GameEngine:
                 pass
 
     def load_profile_statistics(self):
+        """Load high score from file."""
         try:
             if os.path.exists("profile_stats.json"):
                 with open("profile_stats.json", "r") as f:
@@ -188,6 +194,7 @@ class GameEngine:
             pass
 
     def save_profile_statistics(self):
+        """"Save high score to file."""
         try:
             data = {
                 "deaths": self.stats_deaths,
@@ -200,6 +207,7 @@ class GameEngine:
             pass
 
     def handle_resize(self, width, height):
+        """Handle window resize."""
         if width < 100:
             width = 400
         if height < 100:
