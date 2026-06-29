@@ -88,6 +88,11 @@ class GameEngine:
         # Reset game state
         self.reset_match_state()
 
+        # --- Confirmation dialog flags ---
+        self.confirm_exit_game = False   # Home button or ESC during gameplay
+        self.confirm_quit_app = False    # Quit button on main menu
+        self.confirm_message = ""        # Message to display in the dialog
+
     def load_configuration(self):
         """Loads variable boundaries from structured metadata file to avoid literals."""
         try:
@@ -318,6 +323,69 @@ class GameEngine:
              5, self.img_orange]
         ]
 
+    # ------------------- CONFIRMATION DIALOG HELPERS -------------------
+    def get_confirmation_rects(self, message):
+        """Computes the rectangles for the confirmation dialog and Yes/No buttons.
+           Returns (dialog_rect, yes_rect, no_rect)."""
+        # Dialog box
+        dialog_w = int(600 * (self.current_w / 1000))
+        dialog_h = int(200 * (self.current_h / 720))
+        dialog_x = (self.current_w - dialog_w) // 2
+        dialog_y = (self.current_h - dialog_h) // 2 - 50
+        dialog_rect = pygame.Rect(dialog_x, dialog_y, dialog_w, dialog_h)
+
+        # Yes / No buttons
+        btn_w = int(100 * (self.current_w / 1000))
+        btn_h = int(40 * (self.current_h / 720))
+        spacing = 20
+        total_width = 2 * btn_w + spacing
+        start_x = dialog_x + (dialog_w - total_width) // 2
+        btn_y = dialog_y + dialog_h - btn_h - 30
+        yes_rect = pygame.Rect(start_x, btn_y, btn_w, btn_h)
+        no_rect = pygame.Rect(start_x + btn_w + spacing, btn_y, btn_w, btn_h)
+
+        return dialog_rect, yes_rect, no_rect
+
+    def draw_confirmation_dialog(self, message):
+        """Draws the confirmation dialog overlay."""
+        dialog_rect, yes_rect, no_rect = self.get_confirmation_rects(message)
+
+        # Semi-transparent overlay
+        overlay = pygame.Surface((self.current_w, self.current_h), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
+
+        # Dialog background
+        pygame.draw.rect(self.screen, (30, 30, 30), dialog_rect, border_radius=12)
+        pygame.draw.rect(self.screen, (80, 80, 80), dialog_rect, 2, border_radius=12)
+
+        # Message text (split by newline)
+        font = pygame.font.Font(None, max(20, int(28 * (self.current_h / 720))))
+        lines = message.split('\n')
+        y_offset = dialog_rect.y + 30
+        for line in lines:
+            text_surf = font.render(line, True, COLOR_TEXT_CREAM)
+            self.screen.blit(text_surf, (dialog_rect.x + 30, y_offset))
+            y_offset += 35
+
+        # Yes / No buttons
+        for rect, label, color in [
+            (yes_rect, "Yes", (60, 180, 60)),
+            (no_rect, "No", (180, 60, 60))
+        ]:
+            hover = rect.collidepoint(pygame.mouse.get_pos())
+            btn_color = color if not hover else (
+                min(255, color[0] + 30),
+                min(255, color[1] + 30),
+                min(255, color[2] + 30)
+            )
+            pygame.draw.rect(self.screen, btn_color, rect, border_radius=6)
+            pygame.draw.rect(self.screen, (255, 255, 255, 30), rect, 1, border_radius=6)
+            txt = pygame.font.Font(None, max(18, int(26 * (self.current_h / 720)))).render(label, True, COLOR_TEXT_WHITE)
+            self.screen.blit(txt, (rect.x + rect.w//2 - txt.get_width()//2,
+                                   rect.y + rect.h//2 - txt.get_height()//2))
+
+    # ------------------- EVENT PROCESSING -------------------
     def process_system_events(self):
         grid = self.current_grid_size
         for event in pygame.event.get():
@@ -333,28 +401,57 @@ class GameEngine:
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = event.pos
 
+                # --- Handle confirmation dialogs first ---
+                if self.confirm_exit_game:
+                    _, yes_rect, no_rect = self.get_confirmation_rects(
+                        "Are you sure you want to go to home menu?\n(Note: You lose all your progress)"
+                    )
+                    if yes_rect.collidepoint(mouse_pos):
+                        # Yes: exit to menu
+                        self.save_persist_score()
+                        self.stats_deaths += 1
+                        self.save_profile_statistics()
+                        self.current_state = "MENU"
+                        self.load_and_play_home_music()
+                        self.confirm_exit_game = False
+                    elif no_rect.collidepoint(mouse_pos):
+                        self.confirm_exit_game = False
+                    continue  # ignore other clicks while dialog is active
+
+                if self.confirm_quit_app:
+                    _, yes_rect, no_rect = self.get_confirmation_rects(
+                        "Are you sure you want to quit?"
+                    )
+                    if yes_rect.collidepoint(mouse_pos):
+                        self.save_persist_score()
+                        self.save_profile_statistics()
+                        pygame.quit()
+                        sys.exit()
+                    elif no_rect.collidepoint(mouse_pos):
+                        self.confirm_quit_app = False
+                    continue
+
+                # --- Regular state clicks (only if no dialog active) ---
                 if self.current_state == "PLAYING":
                     btn_w = int(100 * (self.current_w / 1000))
                     btn_h = int(36 * (self.current_h / 720))
                     btn_x = 20
                     btn_y = (self.cfg['screen']['hud_height'] // 2) - (btn_h // 2)
                     if pygame.Rect(btn_x, btn_y, btn_w, btn_h).collidepoint(mouse_pos):
-                        self.save_persist_score()
-                        self.stats_deaths += 1
-                        self.save_profile_statistics()
-                        self.current_state = "MENU"
-                        self.load_and_play_home_music()
+                        self.confirm_exit_game = True
+                        return  # prevent further processing in this frame
 
                 elif self.current_state == "MENU":
                     btn_w = int(220 * (self.current_w / 1000))
                     btn_h = int(45 * (self.current_h / 720))
                     cx = self.current_w // 2 - btn_w // 2
-                   
+
                     logo_height = getattr(self, 'logo_height', 200)
                     title_offset = 80 + (logo_height * 0.6)
                     start_y = int(title_offset + 180 * (self.current_h / 720))
                     spacing = int(55 * (self.current_h / 720))
-                   
+
+                    # Main menu buttons
                     if pygame.Rect(cx, start_y, btn_w, btn_h).collidepoint(mouse_pos):
                         self.reset_match_state()
                         self.current_state = "PLAYING"
@@ -368,16 +465,31 @@ class GameEngine:
                     elif pygame.Rect(cx, start_y + spacing * 4, btn_w, btn_h).collidepoint(mouse_pos):
                         self.current_state = "SOUND"
 
+                    # Quit button (bottom-right)
+                    quit_btn_w = int(80 * (self.current_w / 1000))
+                    quit_btn_h = int(35 * (self.current_h / 720))
+                    quit_rect = pygame.Rect(
+                        self.current_w - quit_btn_w - 20,
+                        self.current_h - quit_btn_h - 20,
+                        quit_btn_w, quit_btn_h
+                    )
+                    if quit_rect.collidepoint(mouse_pos):
+                        self.confirm_quit_app = True
+
                 elif self.current_state == "SETTINGS":
                     btn_w = int(100 * (self.current_w / 1000))
                     btn_h = int(35 * (self.current_h / 720))
                     cx = self.current_w // 2
-                   
-                    if pygame.Rect(cx + 10, 200, btn_w, btn_h).collidepoint(mouse_pos):
+                    spacing = int(70 * (self.current_h / 720))
+
+                    # Bot toggle
+                    if pygame.Rect(cx + 20, 200, btn_w, btn_h).collidepoint(mouse_pos):
                         self.bot_enabled = not self.bot_enabled
-                    elif pygame.Rect(cx + 10, 270, btn_w, btn_h).collidepoint(mouse_pos):
+                    # Speed toggle
+                    elif pygame.Rect(cx + 20, 200 + spacing, btn_w, btn_h).collidepoint(mouse_pos):
                         self.speed_index = (self.speed_index + 1) % len(self.speed_options)
                         self.speed_multiplier = self.speed_options[self.speed_index]
+                    # Return button
                     elif pygame.Rect(self.current_w // 2 - 100, self.current_h - 100, 200, 50).collidepoint(mouse_pos):
                         self.current_state = "MENU"
 
@@ -386,18 +498,22 @@ class GameEngine:
                         self.current_state = "MENU"
 
                 elif self.current_state == "SOUND":
-                    cx = self.current_w // 2
                     btn_w = int(100 * (self.current_w / 1000))
                     btn_h = int(35 * (self.current_h / 720))
-                    if pygame.Rect(cx + 10, 200, btn_w, btn_h).collidepoint(mouse_pos):
+                    cx = self.current_w // 2
+                    spacing = int(70 * (self.current_h / 720))
+
+                    # Music toggle
+                    if pygame.Rect(cx + 20, 200, btn_w, btn_h).collidepoint(mouse_pos):
                         self.toggle_music()
-                    elif pygame.Rect(cx + 10, 270, btn_w, btn_h).collidepoint(mouse_pos):
+                    # SFX toggle
+                    elif pygame.Rect(cx + 20, 200 + spacing, btn_w, btn_h).collidepoint(mouse_pos):
                         self.toggle_sfx()
+                    # Return button
                     elif pygame.Rect(cx - 100, self.current_h - 100, 200, 50).collidepoint(mouse_pos):
                         self.current_state = "MENU"
-               
+
                 elif self.current_state == "HOWTOPLAY":
-                    # Fixed: button position matches rendering
                     cx = self.current_w // 2
                     if pygame.Rect(cx - 100, self.current_h - 100, 200, 50).collidepoint(mouse_pos):
                         self.current_state = "MENU"
@@ -417,6 +533,8 @@ class GameEngine:
                         self.player_dir = (-grid, 0)
                     elif event.key in [pygame.K_d, pygame.K_RIGHT] and self.player_dir[0] == 0:
                         self.player_dir = (grid, 0)
+                    elif event.key == pygame.K_ESCAPE:
+                        self.confirm_exit_game = True
                 elif self.current_state == "GAMEOVER":
                     if event.key == pygame.K_SPACE:
                         self.reset_match_state()
@@ -426,7 +544,12 @@ class GameEngine:
                         self.current_state = "MENU"
                         self.load_and_play_home_music()
 
+    # ------------------- GAME UPDATE -------------------
     def update_frame_ticks(self):
+        # Do not update if a confirmation dialog is active
+        if self.confirm_exit_game or self.confirm_quit_app:
+            return
+
         if self.current_state != "PLAYING":
             return
 
@@ -501,6 +624,7 @@ class GameEngine:
             if fruit_regenerate_needed:
                 self.spawn_fruits()
 
+    # ------------------- RENDERING -------------------
     def draw_gradient_rect(self, rect, color1, color2):
         for i in range(rect.height):
             progress = i / rect.height
@@ -589,6 +713,20 @@ class GameEngine:
             txt_surf = font.render(text, True, COLOR_TEXT_WHITE)
             self.screen.blit(txt_surf, (cx + btn_w//2 - txt_surf.get_width()//2,
                                       y_pos + btn_h//2 - txt_surf.get_height()//2))
+
+        # Quit button (bottom-right)
+        quit_btn_w = int(80 * (self.current_w / 1000))
+        quit_btn_h = int(35 * (self.current_h / 720))
+        quit_rect = pygame.Rect(self.current_w - quit_btn_w - 20,
+                                self.current_h - quit_btn_h - 20,
+                                quit_btn_w, quit_btn_h)
+        hover = quit_rect.collidepoint(mouse_pos)
+        color = (200, 80, 80) if hover else (120, 50, 50)
+        pygame.draw.rect(self.screen, color, quit_rect, border_radius=6)
+        pygame.draw.rect(self.screen, (255, 255, 255, 30), quit_rect, 1, border_radius=6)
+        quit_txt = self.font_small.render("Quit", True, COLOR_TEXT_WHITE)
+        self.screen.blit(quit_txt, (quit_rect.x + quit_rect.w//2 - quit_txt.get_width()//2,
+                                    quit_rect.y + quit_rect.h//2 - quit_txt.get_height()//2))
 
     def render_settings_view(self):
         self.screen.fill((10, 30, 15))
@@ -792,6 +930,9 @@ class GameEngine:
     def render_graphics_pipeline(self):
         if self.current_state == "MENU":
             self.render_menu_widgets()
+            # Draw confirmation if active (for Quit button)
+            if self.confirm_quit_app:
+                self.draw_confirmation_dialog("Are you sure you want to quit?")
             pygame.display.flip()
             return
         elif self.current_state == "SETTINGS":
@@ -811,6 +952,7 @@ class GameEngine:
             pygame.display.flip()
             return
 
+        # --- PLAYING or GAMEOVER ---
         self.draw_gameplay_grid()
 
         # HUD background with gradient
@@ -826,40 +968,27 @@ class GameEngine:
         font_small = pygame.font.Font(None, max(16, int(24 * (self.current_h / 720))))
        
         # --- DYNAMIC HUD ALIGNMENT ---
-        # Calculate button dimensions
         btn_w = int(100 * (self.current_w / 1000))
         btn_h = int(36 * (self.current_h / 720))
         btn_x = 20
         btn_y = (hud_height // 2) - (btn_h // 2)
-        btn_end = btn_x + btn_w + 20  # Button end + padding
-       
-        # Create text surfaces
+        btn_end = btn_x + btn_w + 20
+
         text_score = font_med.render(f"Score: {self.score}", True, COLOR_TEXT_GOLD)
         text_high = font_med.render(f"High: {self.high_score}", True, COLOR_TEXT_GOLD)
         text_timer = font_med.render(f"Time: {self.current_round_duration}s", True, COLOR_TEXT_CREAM)
        
-        # Position score to the right of the Home button
-        score_x = btn_end + 20  # Start after button with padding
-       
-        # Position high score on the right
+        score_x = btn_end + 20
         high_score_x = self.current_w - text_high.get_width() - 30
-       
-        # Position timer in the centre, but avoid overlapping with score and high score
         timer_x = self.current_w // 2 - text_timer.get_width() // 2
-       
-        # Check if timer overlaps with score
+
         if timer_x < score_x + text_score.get_width() + 20:
             timer_x = score_x + text_score.get_width() + 20
-       
-        # Check if timer overlaps with high score
         if timer_x + text_timer.get_width() > high_score_x - 20:
             timer_x = high_score_x - text_timer.get_width() - 20
-       
-        # Ensure timer doesn't go off screen
         if timer_x < 0:
             timer_x = 10
-       
-        # Blit all HUD elements
+
         self.screen.blit(text_score, (score_x, 15))
         self.screen.blit(text_timer, (timer_x, 15))
         self.screen.blit(text_high, (high_score_x, 15))
@@ -932,16 +1061,15 @@ class GameEngine:
             menu_text = self.font_small.render("Press ESC to go to Main Menu", True, COLOR_TEXT_CREAM)
             self.screen.blit(menu_text, (self.current_w//2 - menu_text.get_width()//2, self.current_h // 2 + 100))
 
+        # --- Draw confirmation dialog if active (Home/ESC during gameplay) ---
+        if self.confirm_exit_game:
+            self.draw_confirmation_dialog(
+                "Are you sure you want to go to home menu?\n(Note: You lose all your progress)"
+            )
+
         pygame.display.flip()
 
-    def run(self):
-        while True:
-            self.process_system_events()
-            self.update_frame_ticks()
-            self.render_graphics_pipeline()
-            target_fps = self.cfg['screen']['fps'] * self.speed_multiplier
-            self.clock.tick(target_fps)
-
+    # ------------------- MUSIC / SFX -------------------
     def load_and_play_home_music(self):
         self.current_music = "home"
         if not self.music_on:
@@ -984,6 +1112,16 @@ class GameEngine:
     def play_lose_sfx(self):
         if self.sfx_on and self.snd_lose:
             self.snd_lose.play()
+
+    # ------------------- MAIN LOOP -------------------
+    def run(self):
+        while True:
+            self.process_system_events()
+            self.update_frame_ticks()
+            self.render_graphics_pipeline()
+            target_fps = self.cfg['screen']['fps'] * self.speed_multiplier
+            self.clock.tick(target_fps)
+
 
 if __name__ == "__main__":
     engine = GameEngine()
