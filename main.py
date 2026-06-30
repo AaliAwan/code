@@ -31,7 +31,7 @@ class GameEngine:
     """Main Game Engine Class."""
 
     def __init__(self):
-        """Game Engine Constructor."""
+    """Game Engine Constructor."""
         pygame.init()
         pygame.mixer.init()
         self.load_configuration()
@@ -172,7 +172,7 @@ class GameEngine:
             return 0
 
     def save_persist_score(self):
-
+        """Save high score to file."""
         if self.score > self.high_score:
             self.high_score = self.score
             try:
@@ -183,6 +183,8 @@ class GameEngine:
 
     def load_profile_statistics(self):
         """Load high score from file."""
+    
+
         try:
             if os.path.exists("profile_stats.json"):
                 with open("profile_stats.json", "r") as f:
@@ -194,7 +196,8 @@ class GameEngine:
             pass
 
     def save_profile_statistics(self):
-        """"Save high score to file."""
+        """Save high score to file."""
+
         try:
             data = {
                 "deaths": self.stats_deaths,
@@ -208,6 +211,7 @@ class GameEngine:
 
     def handle_resize(self, width, height):
         """Handle window resize."""
+        
         if width < 100:
             width = 400
         if height < 100:
