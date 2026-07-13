@@ -31,7 +31,6 @@ class GameEngine:
     """Main Game Engine Class."""
 
     def __init__(self):
-    """Game Engine Constructor."""
         pygame.init()
         pygame.mixer.init()
         self.load_configuration()
