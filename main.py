@@ -28,10 +28,10 @@ COLOR_RARE = (255, 80, 80)  # Red for rare fruits
 
 
 class GameEngine:
-    """Main Game Engine Class."""
 
+
+    """Main Game Engine Class."""
     def __init__(self):
-    """Game Engine Constructor."""
         pygame.init()
         pygame.mixer.init()
         self.load_configuration()
@@ -182,9 +182,6 @@ class GameEngine:
                 pass
 
     def load_profile_statistics(self):
-        """Load high score from file."""
-    
-
         try:
             if os.path.exists("profile_stats.json"):
                 with open("profile_stats.json", "r") as f:
@@ -196,8 +193,6 @@ class GameEngine:
             pass
 
     def save_profile_statistics(self):
-        """Save high score to file."""
-
         try:
             data = {
                 "deaths": self.stats_deaths,
@@ -210,8 +205,6 @@ class GameEngine:
             pass
 
     def handle_resize(self, width, height):
-        """Handle window resize."""
-        
         if width < 100:
             width = 400
         if height < 100:
