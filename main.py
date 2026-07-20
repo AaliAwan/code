@@ -114,7 +114,7 @@ class GameEngine:
         self.img_pear = ImageList("images/pear", 20, 20)
         self.img_orange = ImageList("images/orange", 20, 20)
 
-        # LOAD HOME SCREEN LOGO IMAGE
+        # LOAD THEHOME SCREEN LOGO IMAGE
         try:
             raw_logo = pygame.image.load("images/logo.png").convert_alpha()
             logo_scale = min(self.cfg['screen']['width'] * 0.25, 250)
