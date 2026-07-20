@@ -8,7 +8,7 @@ import time
 from imagelist import ImageList
 from enemy import Enemy
 
-# Global System Color Palette Constants - JUNGLE/SAFARI THEME
+# JUNGLE/SAFARI THEME
 COLOR_DARK_GREEN = (10, 30, 15)  # Darker jungle green
 COLOR_LIGHT_GREEN = (35, 80, 35)  # Lush jungle green
 COLOR_HUD_BG = (60, 50, 30)  # Warm wood brown
@@ -36,7 +36,7 @@ class GameEngine:
         pygame.mixer.init()
         self.load_configuration()
 
-        # Structural state engine variables
+        # The tate engine variables
         self.is_fullscreen = False
         self.current_w = self.cfg['screen']['width']
         self.current_h = self.cfg['screen']['height']
@@ -48,32 +48,32 @@ class GameEngine:
         )
         pygame.display.set_caption(self.cfg['assets']['title'])
         self.clock = pygame.time.Clock()
-        self.current_state = "MENU"  # MENU, PLAYING, GAMEOVER, SETTINGS, PROFILE, HOWTOPLAY
+        self.current_state = "MENU"
         self.high_score = self.load_persist_score()
 
-        # Game session parameters
+        # Parameters of game
         self.score = 0
         self.player_segments = []
         self.player_length = self.cfg['game_balance']['initial_snake_length']
         self.player_dir = (self.cfg['screen']['grid_size'], 0)
 
-        # --- ROUND TIMER AND CONFIGURATION MODIFIERS ---
+        # Timer
         self.round_start_time = 0.0
         self.current_round_duration = 0.0
 
-        # Settings modifiers
+        # Settings change
         self.bot_enabled = True
         self.speed_multiplier = 1.0  # 1.0x, 1.5x, or 2.0x speed modes
         self.speed_options = [1.0, 1.5, 2.0]
         self.speed_index = 0  # Index into speed_options
 
-        # Profile Data Storage tracking variables
+        # Data Storage in Profile
         self.stats_deaths = 0
         self.stats_longest_time = 0.0
         self.stats_total_score = 0
         self.load_profile_statistics()
 
-        # Core Fonts Setup
+        # Fonts
         self.font_title = pygame.font.Font(None, 72)
         self.font_large = pygame.font.Font(None, 56)
         self.font_medium = pygame.font.Font(None, 36)
@@ -88,10 +88,8 @@ class GameEngine:
         self.current_music = None
         self.load_and_play_home_music()
 
-        # Reset game state
         self.reset_match_state()
 
-        # --- Confirmation dialog flags ---
         self.confirm_exit_game = False   # Home button or ESC during gameplay
         self.confirm_quit_app = False    # Quit button on main menu
         self.confirm_message = ""        # Message to display in the dialog
@@ -116,7 +114,7 @@ class GameEngine:
         self.img_pear = ImageList("images/pear", 20, 20)
         self.img_orange = ImageList("images/orange", 20, 20)
 
-        # --- LOAD HOME SCREEN LOGO IMAGE ---
+        # LOAD HOME SCREEN LOGO IMAGE
         try:
             raw_logo = pygame.image.load("images/logo.png").convert_alpha()
             logo_scale = min(self.cfg['screen']['width'] * 0.25, 250)
@@ -135,7 +133,7 @@ class GameEngine:
             self.logo_width = 200
             self.logo_height = 200
 
-        # --- LOAD HOME SCREEN MENU SNAKE IMAGE ---
+        # LOAD HOME SCREEN MENU SNAKE IMAGE
         try:
             raw_menu_snake = pygame.image.load("image_5bd317.png").convert_alpha()
             self.img_menu_snake = pygame.transform.smoothscale(raw_menu_snake, (220, 220))
@@ -143,7 +141,7 @@ class GameEngine:
             self.img_menu_snake = pygame.Surface((220, 220), pygame.SRCALPHA)
             pygame.draw.rect(self.img_menu_snake, COLOR_BUTTON_GREEN, (0, 0, 220, 220), border_radius=12)
 
-        # --- SOUND LOADING ---
+        # Sound
         try:
             self.snd_eat = pygame.mixer.Sound(os.path.join("sounds", "eat.wav"))
         except Exception as e:
@@ -338,7 +336,7 @@ class GameEngine:
              5, self.img_orange]
         ]
 
-    # ------------------- CONFIRMATION DIALOG HELPERS -------------------
+    # Confirmation of Yes or No
     def get_confirmation_rects(self, message):
         """Computes the rectangles for the confirmation dialog and Yes/No buttons.
            Returns (dialog_rect, yes_rect, no_rect)."""
@@ -374,7 +372,6 @@ class GameEngine:
         pygame.draw.rect(self.screen, (30, 30, 30), dialog_rect, border_radius=12)
         pygame.draw.rect(self.screen, (80, 80, 80), dialog_rect, 2, border_radius=12)
 
-        # Message text (split by newline)
         font = pygame.font.Font(None, max(20, int(28 * (self.current_h / 720))))
         lines = message.split('\n')
         y_offset = dialog_rect.y + 30
@@ -400,7 +397,7 @@ class GameEngine:
             self.screen.blit(txt, (rect.x + rect.w//2 - txt.get_width()//2,
                                    rect.y + rect.h//2 - txt.get_height()//2))
 
-    # ------------------- EVENT PROCESSING -------------------
+    # EVENT PROCESSING
     def process_system_events(self):
         grid = self.current_grid_size
         for event in pygame.event.get():
@@ -416,13 +413,13 @@ class GameEngine:
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = event.pos
 
-                # --- Handle confirmation dialogs first ---
+                #Handle yes/no confirmation first
                 if self.confirm_exit_game:
                     _, yes_rect, no_rect = self.get_confirmation_rects(
                         "Are you sure you want to go to home menu?\n(Note: You lose all your progress)"
                     )
                     if yes_rect.collidepoint(mouse_pos):
-                        # Yes: exit to menu
+                        # If Yes then exit to menu
                         self.save_persist_score()
                         self.stats_deaths += 1
                         self.save_profile_statistics()
@@ -431,7 +428,7 @@ class GameEngine:
                         self.confirm_exit_game = False
                     elif no_rect.collidepoint(mouse_pos):
                         self.confirm_exit_game = False
-                    continue  # ignore other clicks while dialog is active
+                    continue  # ignore other clicks
 
                 if self.confirm_quit_app:
                     _, yes_rect, no_rect = self.get_confirmation_rects(
@@ -446,7 +443,7 @@ class GameEngine:
                         self.confirm_quit_app = False
                     continue
 
-                # --- Regular state clicks (only if no dialog active) ---
+                # Normal Events - We're not waiting for yes/no
                 if self.current_state == "PLAYING":
                     btn_w = int(100 * (self.current_w / 1000))
                     btn_h = int(36 * (self.current_h / 720))
@@ -454,7 +451,7 @@ class GameEngine:
                     btn_y = (self.cfg['screen']['hud_height'] // 2) - (btn_h // 2)
                     if pygame.Rect(btn_x, btn_y, btn_w, btn_h).collidepoint(mouse_pos):
                         self.confirm_exit_game = True
-                        return  # prevent further processing in this frame
+                        return  # prevent further processing
 
                 elif self.current_state == "MENU":
                     btn_w = int(220 * (self.current_w / 1000))
@@ -480,7 +477,7 @@ class GameEngine:
                     elif pygame.Rect(cx, start_y + spacing * 4, btn_w, btn_h).collidepoint(mouse_pos):
                         self.current_state = "SOUND"
 
-                    # Quit button (bottom-right)
+                    # Quit button (at bottom right)
                     quit_btn_w = int(80 * (self.current_w / 1000))
                     quit_btn_h = int(35 * (self.current_h / 720))
                     quit_rect = pygame.Rect(
@@ -559,9 +556,9 @@ class GameEngine:
                         self.current_state = "MENU"
                         self.load_and_play_home_music()
 
-    # ------------------- GAME UPDATE -------------------
+    # GAME UPDATE 
     def update_frame_ticks(self):
-        # Do not update if a confirmation dialog is active
+        # Dont update if a confirmation dialog is active
         if self.confirm_exit_game or self.confirm_quit_app:
             return
 
@@ -612,11 +609,10 @@ class GameEngine:
             if len(self.player_segments) > self.player_length:
                 self.player_segments.pop()
 
-        # --- BOT LOGIC with random fruit targeting ---
+        # Bot goes to random fruits
         if self.bot_enabled and hasattr(self, 'enemies') and self.fruits:
             fruit_regenerate_needed = False
 
-            # Ensure bot_targets list matches enemy count
             while len(self.bot_targets) < len(self.enemies):
                 if self.fruits:
                     target = random.choice(self.fruits)
@@ -626,17 +622,17 @@ class GameEngine:
 
             for i, bot in enumerate(self.enemies):
                 try:
-                    # Check if current target still exists in fruits
+                    # Check if fruit still exists
                     target_x, target_y = self.bot_targets[i]
                     target_exists = any(f[0] == target_x and f[1] == target_y for f in self.fruits)
 
                     if not target_exists and self.fruits:
-                        # Target fruit is gone – pick a new random fruit
+                        # fruit is gone pick a new fruit
                         new_target = random.choice(self.fruits)
                         self.bot_targets[i] = (new_target[0], new_target[1])
                         target_x, target_y = self.bot_targets[i]
 
-                    # Move bot towards its target
+                    # Bot goes to target
                     bot.update_path(target_x, target_y)
                     bot.process_movement()
 
@@ -650,7 +646,7 @@ class GameEngine:
                 except (AttributeError, IndexError):
                     pass
 
-                # Check collision with bot
+                # Collision with bot
                 if [head_x, head_y] in bot.segments:
                     self.play_lose_sfx()
                     self.current_state = "GAMEOVER"
@@ -662,9 +658,8 @@ class GameEngine:
 
             if fruit_regenerate_needed:
                 self.spawn_fruits()
-                # After regeneration, bot targets that pointed to removed fruits will be updated on next frame
 
-    # ------------------- RENDERING -------------------
+    # Drawing 
     def draw_gradient_rect(self, rect, color1, color2):
         for i in range(rect.height):
             progress = i / rect.height
@@ -893,7 +888,6 @@ class GameEngine:
         title_surf = self.font_large.render("How to Play", True, COLOR_TEXT_LIME)
         self.screen.blit(title_surf, (self.current_w // 2 - title_surf.get_width() // 2, 40))
        
-        # Adjusted card height for shorter content
         card_w = int(800 * (self.current_w / 1000))
         card_h = int(420 * (self.current_h / 720))  # reduced height
         card_x = self.current_w // 2 - card_w // 2
@@ -908,7 +902,7 @@ class GameEngine:
         line_spacing = max(20, int(28 * (self.current_h / 720)))
         font = pygame.font.Font(None, max(18, int(24 * (self.current_h / 720))))
        
-        # Instructions truncated at GAME OVER
+        # Instructions for the game
         instructions = [
             "OBJECTIVE",
             "Guide Snakey through the jungle to eat fruits and grow!",
@@ -970,7 +964,7 @@ class GameEngine:
     def render_graphics_pipeline(self):
         if self.current_state == "MENU":
             self.render_menu_widgets()
-            # Draw confirmation if active (for Quit button)
+            # Draw confirmation for Quit button
             if self.confirm_quit_app:
                 self.draw_confirmation_dialog("Are you sure you want to quit?")
             pygame.display.flip()
@@ -992,22 +986,19 @@ class GameEngine:
             pygame.display.flip()
             return
 
-        # --- PLAYING or GAMEOVER ---
+        #  PLAYING or GAMEOVER 
         self.draw_gameplay_grid()
 
-        # HUD background with gradient
         hud_height = self.cfg['screen']['hud_height']
         hud_rect = pygame.Rect(0, 0, self.current_w, hud_height)
         self.draw_gradient_rect(hud_rect, COLOR_HUD_GRADIENT_TOP, COLOR_HUD_GRADIENT_BOTTOM)
        
-        # HUD decorative line (simple)
         pygame.draw.line(self.screen, (100, 80, 50), (0, hud_height), (self.current_w, hud_height), 2)
 
-        # Scale HUD text
         font_med = pygame.font.Font(None, max(20, int(36 * (self.current_h / 720))))
         font_small = pygame.font.Font(None, max(16, int(24 * (self.current_h / 720))))
        
-        # --- DYNAMIC HUD ALIGNMENT ---
+        # Alignment
         btn_w = int(100 * (self.current_w / 1000))
         btn_h = int(36 * (self.current_h / 720))
         btn_x = 20
@@ -1101,7 +1092,7 @@ class GameEngine:
             menu_text = self.font_small.render("Press ESC to go to Main Menu", True, COLOR_TEXT_CREAM)
             self.screen.blit(menu_text, (self.current_w//2 - menu_text.get_width()//2, self.current_h // 2 + 100))
 
-        # --- Draw confirmation dialog if active (Home/ESC during gameplay) ---
+        #  Confirmation dialog (Home/ESC during gameplay)
         if self.confirm_exit_game:
             self.draw_confirmation_dialog(
                 "Are you sure you want to go to home menu?\n(Note: You lose all your progress)"
@@ -1109,7 +1100,7 @@ class GameEngine:
 
         pygame.display.flip()
 
-    # ------------------- MUSIC / SFX -------------------
+    # MUSIC/SFX 
     def load_and_play_home_music(self):
         self.current_music = "home"
         if not self.music_on:
@@ -1153,7 +1144,7 @@ class GameEngine:
         if self.sfx_on and self.snd_lose:
             self.snd_lose.play()
 
-    # ------------------- MAIN LOOP -------------------
+    # The Main Loop 
     def run(self):
         while True:
             self.process_system_events()
