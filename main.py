@@ -17,12 +17,12 @@ COLOR_HUD_GRADIENT_BOTTOM = (40, 35, 20)  # Darker wood
 COLOR_TEXT_LIME = (50, 255, 50)  # Lime green for title
 COLOR_TEXT_GOLD = (255, 215, 0)  # Golden text for highlights
 COLOR_TEXT_WHITE = (255, 255, 255)
-COLOR_TEXT_CREAM = (245, 235, 200)  # Creamy white for readability
+COLOR_TEXT_CREAM = (245, 235, 200)
 COLOR_BUTTON_GREEN = (25, 55, 30)  # Darker jungle green for buttons
 COLOR_BUTTON_HOVER = (45, 90, 50)  # Slightly lighter on hover
 COLOR_CARD_DARK = (20, 30, 20)  # Dark jungle shadow
-COLOR_GRID_ALT = (35, 80, 35)  # Alternate grid color
-COLOR_LEAF = (60, 140, 40)  # Leaf green (kept for menu background)
+COLOR_GRID_ALT = (35, 80, 35)
+COLOR_LEAF = (60, 140, 40)  # Leaf green for menu background
 COLOR_UNCOMMON = (255, 200, 50)  # Gold for uncommon fruits
 COLOR_RARE = (255, 80, 80)  # Red for rare fruits
 
@@ -65,7 +65,7 @@ class GameEngine:
         self.bot_enabled = True
         self.speed_multiplier = 1.0  # 1.0x, 1.5x, or 2.0x speed modes
         self.speed_options = [1.0, 1.5, 2.0]
-        self.speed_index = 0  # Index into speed_options
+        self.speed_index = 0  
 
         # Data Storage in Profile
         self.stats_deaths = 0
@@ -1092,7 +1092,7 @@ class GameEngine:
             menu_text = self.font_small.render("Press ESC to go to Main Menu", True, COLOR_TEXT_CREAM)
             self.screen.blit(menu_text, (self.current_w//2 - menu_text.get_width()//2, self.current_h // 2 + 100))
 
-        #  Confirmation dialog (Home/ESC during gameplay)
+        #  Confirmation dialog of Home/ESC during gameplay
         if self.confirm_exit_game:
             self.draw_confirmation_dialog(
                 "Are you sure you want to go to home menu?\n(Note: You lose all your progress)"
