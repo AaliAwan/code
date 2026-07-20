@@ -1144,7 +1144,7 @@ class GameEngine:
         if self.sfx_on and self.snd_lose:
             self.snd_lose.play()
 
-    # The Main Loop 
+    # This is my Main Loop 
     def run(self):
         while True:
             self.process_system_events()
