@@ -986,7 +986,7 @@ class GameEngine:
             pygame.display.flip()
             return
 
-        #  PLAYING or GAMEOVER 
+        #  PLAYING OR GAMEOVER 
         self.draw_gameplay_grid()
 
         hud_height = self.cfg['screen']['hud_height']
