@@ -964,7 +964,7 @@ class GameEngine:
     def render_graphics_pipeline(self):
         if self.current_state == "MENU":
             self.render_menu_widgets()
-            # Draw confirmation for Quit button
+            # Draw confirmation for the quit button
             if self.confirm_quit_app:
                 self.draw_confirmation_dialog("Are you sure you want to quit?")
             pygame.display.flip()
