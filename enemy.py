@@ -1,6 +1,5 @@
 """
 Snakey Safari - Enemy Bot Class Module
-NCEA Level 3 Digital Technologies AS 91906 Excellence Framework.
 """
 import pygame
 
