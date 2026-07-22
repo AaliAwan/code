@@ -6,7 +6,7 @@ import pygame
 class Enemy:
     def __init__(self, x, y, width, height, image_list, screen, grid_size, initial_length=3, max_width=1000, max_height=720):
         """
-        Initializes the competitor bot entity.
+        Initializes the competitor bot.
         Saves boundary restrictions locally so they can scale alongside the viewport frame.
         """
         self.width = width
@@ -15,7 +15,7 @@ class Enemy:
         self.screen = screen
         self.grid_size = grid_size
         
-        # Dynamic boundaries storage tracking variables
+        # boundaries tracking variables
         self.max_width = max_width
         self.max_height = max_height
         
@@ -49,7 +49,7 @@ class Enemy:
     def process_movement(self):
         """
         Calculates a step along the grid toward the target, inserts a new head position,
-        manages the trailing body trail, and enforces defensive boundary clamping.
+        manages the trailing body trail, and enforces the boundary clamping.
         """
         hud_h = 60
 
@@ -64,8 +64,6 @@ class Enemy:
         elif delta_y != 0:
             next_y += self.grid_size if delta_y > 0 else -self.grid_size
 
-        # --- EXCELLENCE FRAMEWORK: DYNAMIC DATA VALIDATION LAYER ---
-        # BUGFIX: Mathematical snapping boundaries back into active grid alignment
         if next_y < hud_h:
             next_y = ((hud_h // self.grid_size) + 1) * self.grid_size
         if next_y >= self.max_height:

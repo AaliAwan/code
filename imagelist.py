@@ -1,6 +1,5 @@
 """
 ImageList Module - Asset management engine.
-Handles automated sequential processing of indexed sprite states.
 """
 from os.path import exists
 import pygame
@@ -10,7 +9,7 @@ class ImageList:
         """Loads and crops a sequence of indexed image variants automatically."""
         self._images = []
         count = 0
-        # Check files sequentially matching pattern: filenameX.jpg or filenameX.png
+        # Check files matching pattern
         while True:
             current_file = f"{filename}{count}.png"
             if not exists(current_file):
@@ -23,7 +22,7 @@ class ImageList:
             self._images.append(scaled)
             count += 1
             
-        # Fallback safeguard if no automated frames were populated
+        # Fallback safeguard if no automated frames
         if not self._images:
             fallback = pygame.Surface((width, height))
             fallback.fill((255, 0, 0))

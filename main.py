@@ -1006,7 +1006,7 @@ class GameEngine:
         btn_end = btn_x + btn_w + 20
 
         text_score = font_med.render(f"Score: {self.score}", True, COLOR_TEXT_GOLD)
-        text_high = font_med.render(f"High: {self.high_score}", True, COLOR_TEXT_GOLD)
+        text_high = font_med.render(f"High Score: {self.high_score}", True, COLOR_TEXT_GOLD)
         text_timer = font_med.render(f"Time: {self.current_round_duration}s", True, COLOR_TEXT_CREAM)
        
         score_x = btn_end + 20
